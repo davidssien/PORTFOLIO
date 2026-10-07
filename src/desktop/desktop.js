@@ -1,5 +1,10 @@
 import { Icon } from "./icon.js";
 
+import {
+    osSound,
+    resizeScratch
+} from "./soundmanager.js";
+
 
 export class Desktop {
 
@@ -242,25 +247,18 @@ export class Desktop {
 
     }
 
-
     bindSelection() {
-
         this.iconContainer.addEventListener(
             "pointerdown",
-            event => {
-
-                if (
-                    event.button !== 0
-                ) {
+            (event) => {
+                if (event.button !== 0) {
                     return;
                 }
 
-
                 /*
-                 * Clicking an icon should not
-                 * begin a marquee selection.
+                 * Don't start marquee selection
+                 * when clicking directly on an icon.
                  */
-
                 if (
                     event.target.closest(
                         ".desktop-icon"
@@ -269,9 +267,7 @@ export class Desktop {
                     return;
                 }
 
-
                 event.preventDefault();
-
 
                 this.clearSelection();
 
@@ -282,7 +278,6 @@ export class Desktop {
 
 
                 this.selectionStart = {
-
                     x:
                         event.clientX -
                         desktopRect.left,
@@ -290,10 +285,25 @@ export class Desktop {
                     y:
                         event.clientY -
                         desktopRect.top
-
                 };
 
 
+                /*
+                 * Scratch tracking
+                 */
+                let lastMouseX =
+                    event.clientX;
+
+                let lastMouseY =
+                    event.clientY;
+
+                let lastScratchTime =
+                    0;
+
+
+                /*
+                 * Create selection rectangle.
+                 */
                 this.selectionBox =
                     document.createElement(
                         "div"
@@ -323,33 +333,97 @@ export class Desktop {
 
 
                 const move =
-                    moveEvent => {
+                    (moveEvent) => {
 
+                        /*
+                         * =========================
+                         * SCRATCH SOUND
+                         * =========================
+                         */
+
+                        const dx =
+                            moveEvent.clientX -
+                            lastMouseX;
+
+                        const dy =
+                            moveEvent.clientY -
+                            lastMouseY;
+
+
+                        const distance =
+                            Math.sqrt(
+                                dx * dx +
+                                dy * dy
+                            );
+
+
+                        const now =
+                            performance.now();
+
+
+                        /*
+                         * Only scratch when the
+                         * pointer ACTUALLY moves.
+                         *
+                         * Holding still = silence.
+                         */
+                        if (
+                            distance > 1 &&
+                            now -
+                            lastScratchTime >
+                            20
+                        ) {
+                            const speed =
+                                Math.min(
+                                    distance / 5,
+                                    3
+                                );
+
+
+                            resizeScratch(
+                                speed
+                            );
+
+
+                            lastScratchTime =
+                                now;
+                        }
+
+
+                        lastMouseX =
+                            moveEvent.clientX;
+
+                        lastMouseY =
+                            moveEvent.clientY;
+
+
+                        /*
+                         * Update selection rectangle.
+                         */
                         this.updateSelectionBox(
                             moveEvent
                         );
-
                     };
 
 
-                const up = () => {
+                const up =
+                    () => {
 
-                    window.removeEventListener(
-                        "pointermove",
-                        move
-                    );
-
-
-                    this.selectionBox?.remove();
+                        window.removeEventListener(
+                            "pointermove",
+                            move
+                        );
 
 
-                    this.selectionBox =
-                        null;
+                        this.selectionBox?.remove();
 
-                    this.selectionStart =
-                        null;
 
-                };
+                        this.selectionBox =
+                            null;
+
+                        this.selectionStart =
+                            null;
+                    };
 
 
                 window.addEventListener(
@@ -365,12 +439,9 @@ export class Desktop {
                         once: true
                     }
                 );
-
             }
         );
-
-    }
-
+    } 
 
     updateSelectionBox(event) {
 
@@ -486,16 +557,16 @@ export class Desktop {
 
             const intersects =
                 selectionRect.left <
-                    rect.right &&
+                rect.right &&
 
                 selectionRect.right >
-                    rect.left &&
+                rect.left &&
 
                 selectionRect.top <
-                    rect.bottom &&
+                rect.bottom &&
 
                 selectionRect.bottom >
-                    rect.top;
+                rect.top;
 
 
             if (intersects) {

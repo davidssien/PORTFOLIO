@@ -1,33 +1,53 @@
+import {
+    osSound
+} from "./soundmanager.js";
+
+
 export class Taskbar {
     constructor(
         container,
         startMenu,
         menuApps
     ) {
-        this.container = container;
-        this.startMenu = startMenu;
-        this.menuApps = menuApps;
+        this.container =
+            container;
 
-        this.runningApps = new Map();
+        this.startMenu =
+            startMenu;
 
-        this.onLaunch = null;
-        this.onToggle = null;
+        this.menuApps =
+            menuApps;
+
+        this.runningApps =
+            new Map();
+
+        this.onLaunch =
+            null;
+
+        this.onToggle =
+            null;
 
         this.render();
+
         this.renderStartMenu();
+
         this.startClock();
     }
 
+
     render() {
         this.container.innerHTML = `
+
             <div class="retro-menubar">
 
                 <button
                     data-start-button
                     class="retro-menu-button"
+                    aria-label="Open David OS menu"
                 >
                     ■
                 </button>
+
 
                 <div
                     class="
@@ -36,8 +56,9 @@ export class Taskbar {
                         font-bold
                     "
                 >
-                    jujuOS
+                    David OS
                 </div>
+
 
                 <div
                     data-running-apps
@@ -49,6 +70,7 @@ export class Taskbar {
                         overflow-hidden
                     "
                 ></div>
+
 
                 <div
                     data-clock
@@ -66,17 +88,22 @@ export class Taskbar {
                 ></div>
 
             </div>
+
         `;
+
 
         const startButton =
             this.container.querySelector(
                 "[data-start-button]"
             );
 
+
         startButton.addEventListener(
             "click",
             (event) => {
                 event.stopPropagation();
+
+                osSound("menu");
 
                 this.startMenu.classList.toggle(
                     "hidden"
@@ -84,16 +111,23 @@ export class Taskbar {
             }
         );
 
+
         document.addEventListener(
             "click",
             (event) => {
+                const clickedInsideMenu =
+                    this.startMenu.contains(
+                        event.target
+                    );
+
+                const clickedStartButton =
+                    startButton.contains(
+                        event.target
+                    );
+
                 if (
-                    !this.startMenu.contains(
-                        event.target
-                    ) &&
-                    !startButton.contains(
-                        event.target
-                    )
+                    !clickedInsideMenu &&
+                    !clickedStartButton
                 ) {
                     this.startMenu.classList.add(
                         "hidden"
@@ -103,8 +137,10 @@ export class Taskbar {
         );
     }
 
+
     renderStartMenu() {
         this.startMenu.innerHTML = `
+
             <div
                 class="
                     w-52
@@ -130,6 +166,7 @@ export class Taskbar {
                     jujuOS
                 </div>
 
+
                 <div class="py-1">
 
                     ${this.menuApps
@@ -137,6 +174,7 @@ export class Taskbar {
                             app => `
                                 <button
                                     data-start-app="${app.id}"
+
                                     class="
                                         flex
                                         w-full
@@ -171,7 +209,7 @@ export class Taskbar {
                                         "
                                     />
 
-                                    <span>
+                                    <span class="truncate">
                                         ${app.filename}
                                     </span>
 
@@ -181,6 +219,7 @@ export class Taskbar {
                         .join("")}
 
                 </div>
+
 
                 <div
                     class="
@@ -196,47 +235,60 @@ export class Taskbar {
                 </div>
 
             </div>
+
         `;
+
 
         this.startMenu
             .querySelectorAll(
                 "[data-start-app]"
             )
-            .forEach(button => {
-                button.addEventListener(
-                    "click",
-                    () => {
-                        this.startMenu.classList.add(
-                            "hidden"
-                        );
+            .forEach(
+                button => {
+                    button.addEventListener(
+                        "click",
+                        () => {
+                            osSound("open");
 
-                        this.onLaunch?.(
-                            button.dataset.startApp
-                        );
-                    }
-                );
-            });
+                            this.startMenu.classList.add(
+                                "hidden"
+                            );
+
+                            this.onLaunch?.(
+                                button.dataset.startApp
+                            );
+                        }
+                    );
+                }
+            );
     }
+
 
     addApp(app) {
         if (
-            this.runningApps.has(app.id)
+            this.runningApps.has(
+                app.id
+            )
         ) {
             return;
         }
+
 
         const holder =
             this.container.querySelector(
                 "[data-running-apps]"
             );
 
+
         const button =
             document.createElement(
                 "button"
             );
 
+
         button.dataset.taskApp =
             app.id;
+
 
         button.className = `
             flex
@@ -261,7 +313,9 @@ export class Taskbar {
             hover:text-white
         `;
 
+
         button.innerHTML = `
+
             <img
                 src="${app.icon}"
                 draggable="false"
@@ -280,24 +334,32 @@ export class Taskbar {
             />
 
             <span
-                class="truncate"
+                class="
+                    truncate
+                "
             >
                 ${app.filename}
             </span>
+
         `;
+
 
         button.addEventListener(
             "click",
             () => {
+                osSound("select");
+
                 this.onToggle?.(
                     app.id
                 );
             }
         );
 
+
         holder.appendChild(
             button
         );
+
 
         this.runningApps.set(
             app.id,
@@ -305,29 +367,43 @@ export class Taskbar {
         );
     }
 
+
     removeApp(id) {
         const button =
-            this.runningApps.get(id);
+            this.runningApps.get(
+                id
+            );
+
 
         if (!button) {
             return;
         }
 
+
         button.remove();
 
-        this.runningApps.delete(id);
+
+        this.runningApps.delete(
+            id
+        );
     }
+
 
     setActive(id) {
         this.runningApps.forEach(
-            (button, buttonId) => {
+            (
+                button,
+                buttonId
+            ) => {
                 const active =
                     buttonId === id;
+
 
                 button.classList.toggle(
                     "bg-black",
                     active
                 );
+
 
                 button.classList.toggle(
                     "text-white",
@@ -337,6 +413,19 @@ export class Taskbar {
         );
     }
 
+
+    clearActive() {
+        this.runningApps.forEach(
+            button => {
+                button.classList.remove(
+                    "bg-black",
+                    "text-white"
+                );
+            }
+        );
+    }
+
+
     startClock() {
         const update = () => {
             const clock =
@@ -344,12 +433,15 @@ export class Taskbar {
                     "[data-clock]"
                 );
 
+
             if (!clock) {
                 return;
             }
 
+
             const now =
                 new Date();
+
 
             clock.textContent =
                 now.toLocaleTimeString(
@@ -361,7 +453,9 @@ export class Taskbar {
                 );
         };
 
+
         update();
+
 
         setInterval(
             update,

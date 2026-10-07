@@ -1,3 +1,7 @@
+// implement a fake director, and have ./[project_name].exe call the project.
+
+
+
 export const terminalApp = {
   id: "terminal",
 
@@ -5,7 +9,7 @@ export const terminalApp = {
 
   title: "Terminal",
 
-  icon: ">_",
+  icon: "/icons/terminal.svg",
 
   type: "terminal",
 

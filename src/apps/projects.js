@@ -6,7 +6,7 @@ export const projectApps = [
 
     title: "NES Emulator",
 
-    icon: "NES",
+    icon: "/icons/exe.svg",
 
     type: "project",
 
@@ -43,7 +43,7 @@ export const projectApps = [
 
     title: "Compiler",
 
-    icon: "C++",
+    icon: "/icons/exe.svg",
 
     type: "project",
 
@@ -78,7 +78,7 @@ export const projectApps = [
 
     title: "3D Renderer",
 
-    icon: "3D",
+    icon: "/icons/exe.svg",
 
     type: "project",
 
@@ -112,7 +112,7 @@ export const projectApps = [
 
     title: "LC-3 Virtual Machine",
 
-    icon: "VM",
+    icon: "/icons/exe.svg",
 
     type: "project",
 
@@ -147,7 +147,7 @@ export const projectApps = [
 
     title: "Terminal Tetris",
 
-    icon: "T",
+    icon: "/icons/exe.svg",
 
     type: "project",
 
@@ -181,7 +181,7 @@ export const projectApps = [
 
     title: "HTML Parser",
 
-    icon: "<>",
+    icon: "/icons/exe.svg",
 
     type: "project",
 
@@ -217,7 +217,7 @@ export const projectsApp = {
 
   title: "Projects",
 
-  icon: "DIR",
+  icon: "/icons/folder.svg",
 
   type: "folder",
 
@@ -249,9 +249,9 @@ export const projectsApp = {
                   border
                   border-transparent
                   p-4
-                  text-white
-                  hover:border-white
-                  hover:bg-white/5
+                  text-black
+                  hover:border-black
+                  hover:bg-black/5
                 "
               >
                 <div

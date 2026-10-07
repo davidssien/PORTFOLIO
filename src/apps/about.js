@@ -1,3 +1,4 @@
+
 export const aboutApp = {
   id: "about",
 
@@ -5,7 +6,7 @@ export const aboutApp = {
 
   title: "About Me",
 
-  icon: "TXT",
+  icon: "/icons/text.svg",
 
   type: "text",
 
@@ -25,7 +26,7 @@ export const aboutApp = {
           leading-6
           text-black
         "
-      >JUJU
+      >David Essien
 ================================
 
 Computer Science Student

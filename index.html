@@ -4,78 +4,77 @@
 <head>
     <meta charset="UTF-8" />
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>jujuOS</title>
 </head>
 
 <body>
 
-    <main
-        id="app"
-        class="
+    <main id="app" class="
             relative
             h-screen
             w-screen
             overflow-hidden
-        "
-    >
+        ">
 
-        <canvas
-            id="desktop-canvas"
-            class="
+        <div id="loading-screen" class="
+        fixed
+        inset-0
+        z-[99998]
+    "></div>
+
+
+        <div id="context-menu" class="
+            fixed
+            z-[99990]
+            hidden
+        "></div>
+
+        <div
+            id="welcome-screen"
+            class="hidden"
+        ></div>
+
+        <canvas id="desktop-canvas" class="
                 absolute
                 inset-0
                 z-0
                 h-full
                 w-full
-            "
-        ></canvas>
+            "></canvas>
 
         <!-- Mac-style menu bar -->
-        <div
-            id="taskbar"
-            class="
+        <div id="taskbar" class="
                 absolute
                 left-0
                 right-0
                 top-0
                 z-[9500]
                 h-[26px]
-            "
-        ></div>
+            "></div>
 
-        <div
-            id="start-menu"
-            class="
+        <div id="start-menu" class="
                 absolute
                 left-0
                 top-[26px]
                 z-[9000]
                 hidden
-            "
-        ></div>
+            "></div>
+
 
         <!-- Desktop begins BELOW menu bar -->
-        <div
-            id="desktop-icons"
-            class="
+        <div id="desktop-icons" class="
                 absolute
                 bottom-0
                 left-0
                 right-0
                 top-[26px]
                 z-10
-            "
-        ></div>
+            "></div>
 
         <!-- Windows also begin below menu bar -->
-        <div
-            id="windows"
-            class="
+        <div id="windows" class="
                 pointer-events-none
                 absolute
                 bottom-0
@@ -83,27 +82,21 @@
                 right-0
                 top-[26px]
                 z-20
-            "
-        ></div>
+            "></div>
 
-        <canvas
-            id="cursor-canvas"
-            class="
+        <canvas id="cursor-canvas" class="
                 pointer-events-none
                 fixed
                 inset-0
                 z-[99999]
                 h-full
                 w-full
-            "
-        ></canvas>
+            "></canvas>
 
     </main>
 
-    <script
-        type="module"
-        src="/src/main.js"
-    ></script>
+    <script type="module" src="/src/main.js"></script>
 
 </body>
+
 </html>

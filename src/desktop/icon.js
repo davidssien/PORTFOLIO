@@ -1,11 +1,7 @@
 export class Icon {
-
     constructor(app, onOpen) {
-
         this.app = app;
-
-        this.onOpen =
-            onOpen;
+        this.onOpen = onOpen;
 
         this.element =
             document.createElement(
@@ -13,23 +9,21 @@ export class Icon {
             );
 
         this.create();
-
     }
 
 
     create() {
-
         this.element.className = `
             desktop-icon
 
             flex
-            h-[88px]
-            w-[96px]
+            h-[110px]
+            w-[110px]
 
             flex-col
             items-center
 
-            gap-1
+            gap-2
 
             border
             border-transparent
@@ -41,33 +35,38 @@ export class Icon {
             outline-none
         `;
 
+        this.element.dataset.appId =
+        this.app.id;
+
 
         this.element.innerHTML = `
 
             <img
-
                 src="${this.app.icon}"
 
                 draggable="false"
 
+                alt=""
+
                 class="
-                    h-10
-                    w-10
+                    h-14
+                    w-14
+
+                    shrink-0
 
                     object-contain
 
                     grayscale
-
                     contrast-125
 
                     [image-rendering:pixelated]
                 "
-
             />
+
 
             <span
                 class="
-                    max-w-[94px]
+                    max-w-[104px]
 
                     bg-[#e7e7e7]
 
@@ -84,75 +83,95 @@ export class Icon {
                     text-black
                 "
             >
-
                 ${this.app.filename}
-
             </span>
 
         `;
 
+ 
+
 
         this.element.addEventListener(
             "dblclick",
-            event => {
-
+            (event) => {
                 event.stopPropagation();
 
                 this.onOpen(
                     this.app.id
                 );
-
             }
         );
-
     }
 
 
     select() {
-
         this.element.classList.add(
-            "border-black"
+            "border-[#555]"
         );
+
 
         const label =
             this.element.querySelector(
                 "span"
             );
 
+
+        const image =
+            this.element.querySelector(
+                "img"
+            );
+
+
         label.classList.remove(
             "bg-[#e7e7e7]",
             "text-black"
         );
 
+
         label.classList.add(
-            "bg-black",
+            "bg-[#555]",
             "text-white"
         );
 
+
+        image.classList.add(
+            "brightness-75"
+        );
     }
 
 
     deselect() {
-
         this.element.classList.remove(
-            "border-black"
+            "border-[#555]"
         );
+
 
         const label =
             this.element.querySelector(
                 "span"
             );
 
+
+        const image =
+            this.element.querySelector(
+                "img"
+            );
+
+
         label.classList.remove(
-            "bg-black",
+            "bg-[#555]",
             "text-white"
         );
+
 
         label.classList.add(
             "bg-[#e7e7e7]",
             "text-black"
         );
 
-    }
 
+        image.classList.remove(
+            "brightness-75"
+        );
+    }
 }
