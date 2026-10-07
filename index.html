@@ -1,70 +1,109 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Canvas Cursor</title>
+    <meta charset="UTF-8" />
 
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-    }
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    />
 
-    body {
-      overflow: hidden;
-      cursor: none;
-    }
-
-    canvas {
-      display: block;
-    }
-  </style>
+    <title>jujuOS</title>
 </head>
 
 <body>
-  <canvas id="canvas"></canvas>
 
-  <script>
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
+    <main
+        id="app"
+        class="
+            relative
+            h-screen
+            w-screen
+            overflow-hidden
+        "
+    >
 
-    let mouseX = 0;
-    let mouseY = 0;
+        <canvas
+            id="desktop-canvas"
+            class="
+                absolute
+                inset-0
+                z-0
+                h-full
+                w-full
+            "
+        ></canvas>
 
-    function resize() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
+        <!-- Mac-style menu bar -->
+        <div
+            id="taskbar"
+            class="
+                absolute
+                left-0
+                right-0
+                top-0
+                z-[9500]
+                h-[26px]
+            "
+        ></div>
 
-    window.addEventListener("resize", resize);
-    resize();
+        <div
+            id="start-menu"
+            class="
+                absolute
+                left-0
+                top-[26px]
+                z-[9000]
+                hidden
+            "
+        ></div>
 
-    window.addEventListener("mousemove", (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-    });
+        <!-- Desktop begins BELOW menu bar -->
+        <div
+            id="desktop-icons"
+            class="
+                absolute
+                bottom-0
+                left-0
+                right-0
+                top-[26px]
+                z-10
+            "
+        ></div>
 
-    function render() {
-      // black background
-      ctx.fillStyle = "black";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+        <!-- Windows also begin below menu bar -->
+        <div
+            id="windows"
+            class="
+                pointer-events-none
+                absolute
+                bottom-0
+                left-0
+                right-0
+                top-[26px]
+                z-20
+            "
+        ></div>
 
-      // square cursor
-      const size = 14;
+        <canvas
+            id="cursor-canvas"
+            class="
+                pointer-events-none
+                fixed
+                inset-0
+                z-[99999]
+                h-full
+                w-full
+            "
+        ></canvas>
 
-      ctx.fillStyle = "white";
-      ctx.fillRect(
-        mouseX - size / 2,
-        mouseY - size / 2,
-        size,
-        size
-      );
+    </main>
 
-      requestAnimationFrame(render);
-    }
+    <script
+        type="module"
+        src="/src/main.js"
+    ></script>
 
-    render();
-  </script>
 </body>
 </html>
