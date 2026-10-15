@@ -38,9 +38,13 @@ export class WindowManager {
         this.zIndex =
             100;
 
+        this.instanceCounter =
+            0;
+
         this.cascade =
             0;
     }
+
 
 
     /*
@@ -50,34 +54,58 @@ export class WindowManager {
      */
 
     open(id) {
+
         const app =
             this.apps.get(id);
 
 
         if (!app) {
+
             console.error(
                 `Application not found: ${id}`
             );
+
 
             osSound(
                 "error"
             );
 
+
             return;
+        }
+
+        const multiple =
+            app.allowMultipleInstances !==
+            false;
+
+
+        /*
+         * Apps create independent windows by default.
+         * Special system windows can explicitly opt out.
+         */
+
+        if (
+            !multiple &&
+            this.windows.has(id)
+        ) {
+            this.restore(id);
+            return id;
         }
 
 
         /*
-         * Already open.
+         * Keep the first window's app ID for startup layout.
+         * Additional windows receive unique instance IDs.
          */
 
-        if (
-            this.windows.has(id)
-        ) {
-            this.restore(id);
-            this.focus(id);
+        let windowId = id;
 
-            return;
+        while (
+            this.windows.has(windowId) ||
+            (windowId !== id && this.apps.has(windowId))
+        ) {
+            windowId =
+                `${id}__${++this.instanceCounter}`;
         }
 
 
@@ -87,18 +115,25 @@ export class WindowManager {
             );
 
 
+
         const containerWidth =
             this.container.clientWidth;
+
 
         const containerHeight =
             this.container.clientHeight;
 
 
+
         const requestedWidth =
-            app.width || 600;
+            app.width ||
+            600;
+
 
         const requestedHeight =
-            app.height || 400;
+            app.height ||
+            400;
+
 
 
         const width =
@@ -107,6 +142,7 @@ export class WindowManager {
                 containerWidth - 20
             );
 
+
         const height =
             Math.min(
                 requestedHeight,
@@ -114,16 +150,20 @@ export class WindowManager {
             );
 
 
+
         /*
-         * New windows initially appear
-         * on screen.
+         * =========================
+         * INITIAL POSITION
+         * =========================
          */
 
-        const x =
+        let x =
             Math.max(
                 5,
+
                 Math.min(
-                    80 + this.cascade,
+                    80 +
+                    this.cascade,
 
                     containerWidth -
                     width -
@@ -132,11 +172,13 @@ export class WindowManager {
             );
 
 
-        const y =
+        let y =
             Math.max(
                 5,
+
                 Math.min(
-                    40 + this.cascade,
+                    40 +
+                    this.cascade,
 
                     containerHeight -
                     height -
@@ -145,198 +187,348 @@ export class WindowManager {
             );
 
 
-        this.cascade =
-            (
-                this.cascade +
-                22
-            ) % 130;
+
+        /*
+         * Center special windows
+         * such as Welcome.
+         */
+
+        if (
+            app.centered
+        ) {
+
+            x =
+                Math.round(
+                    (
+                        containerWidth -
+                        width
+                    ) / 2
+                );
 
 
-        element.className = `
-            retro-window
+            y =
+                Math.round(
+                    (
+                        containerHeight -
+                        height
+                    ) / 2
+                );
+        }
 
-            pointer-events-auto
-
-            absolute
-
-            flex
-            flex-col
-
-            overflow-hidden
-        `;
 
 
         /*
-         * IMPORTANT:
-         *
-         * ContextMenu uses this to know
-         * which window was right-clicked.
+         * Only normal windows affect
+         * the cascade position.
+         */
+
+        if (
+            !app.centered
+        ) {
+
+            this.cascade =
+                (
+                    this.cascade +
+                    22
+                ) % 130;
+        }
+
+
+
+        /*
+         * =========================
+         * WINDOW CLASS
+         * =========================
+         */
+
+        if (
+            app.frameless
+        ) {
+
+            element.className = `
+                pointer-events-auto
+
+                absolute
+
+                flex
+                flex-col
+
+                overflow-hidden
+            `;
+
+        }
+
+        else {
+
+            element.className = `
+                retro-window
+
+                pointer-events-auto
+
+                absolute
+
+                flex
+                flex-col
+
+                overflow-hidden
+            `;
+
+        }
+
+
+
+        /*
+         * Used by ContextMenu.
          */
 
         element.dataset.appId =
             id;
 
 
+        element.dataset.windowId =
+            windowId;
+
+
         element.style.left =
             `${x}px`;
+
 
         element.style.top =
             `${y}px`;
 
+
         element.style.width =
             `${width}px`;
+
 
         element.style.height =
             `${height}px`;
 
 
-        element.innerHTML = `
 
-            <header
-                data-titlebar
-                class="retro-titlebar"
-            >
+        /*
+         * =========================
+         * FRAMELESS WINDOW
+         * =========================
+         */
 
-                <button
-                    data-close
-                    class="retro-window-button"
-                    aria-label="Close"
-                ></button>
+        if (
+            app.frameless
+        ) {
 
+            element.innerHTML = `
 
                 <div
+                    data-window-content
+
                     class="
-                        flex
-                        flex-1
-                        items-center
-                        justify-center
+                        h-full
+                        w-full
                         overflow-hidden
                     "
                 >
+                    ${this.getContent(app)}
+                </div>
 
-                    <span
-                        class="retro-title"
+            `;
+
+        }
+
+
+
+        /*
+         * =========================
+         * NORMAL WINDOW
+         * =========================
+         */
+
+        else {
+
+            element.innerHTML = `
+
+                <header
+                    data-titlebar
+                    class="retro-titlebar"
+                >
+
+                    <button
+                        data-close
+                        class="retro-window-button"
+                        aria-label="Close"
+                    ></button>
+
+
+                    <div
+                        class="
+                            flex
+                            flex-1
+                            items-center
+                            justify-center
+                            overflow-hidden
+                        "
                     >
-                        ${app.filename}
-                    </span>
+
+                        <span
+                            class="retro-title"
+                        >
+                            ${app.filename}
+                        </span>
+
+                    </div>
+
+
+                    <button
+                        data-minimize
+                        class="retro-window-button"
+                        aria-label="Minimize"
+                    >
+                        _
+                    </button>
+
+
+                    <button
+                        data-maximize
+                        class="retro-window-button"
+                        aria-label="Maximize"
+                    >
+                        □
+                    </button>
+
+                </header>
+
+
+
+                <div
+                    data-window-content
+
+                    class="
+                        os-scrollbar
+
+                        min-h-0
+
+                        flex-1
+
+                        overflow-auto
+                    "
+                >
+                    ${this.getContent(app)}
+                </div>
+
+
+
+                <!--
+                    Bottom resize strip
+                -->
+
+                <div
+                    class="retro-window-bottom"
+                >
+
+                    <div
+                        data-resize="bottom"
+                        class="retro-resize-bottom-zone"
+                    ></div>
+
+
+                    <div
+                        data-resize="corner"
+                        class="retro-resize-corner"
+                    ></div>
 
                 </div>
 
 
-                <button
-                    data-minimize
-                    class="retro-window-button"
-                    aria-label="Minimize"
-                >
-                    _
-                </button>
 
-
-                <button
-                    data-maximize
-                    class="retro-window-button"
-                    aria-label="Maximize"
-                >
-                    □
-                </button>
-
-            </header>
-
-
-            <div
-                data-window-content
-
-                class="
-                    os-scrollbar
-
-                    min-h-0
-
-                    flex-1
-
-                    overflow-auto
-                "
-            >
-                ${this.getContent(app)}
-            </div>
-
-
-            <!--
-                Bottom resize strip.
-                Keeps resize controls
-                at the absolute bottom.
-            -->
-
-            <div
-                class="retro-window-bottom"
-            >
+                <!--
+                    Right resize edge
+                -->
 
                 <div
-                    data-resize="bottom"
-                    class="retro-resize-bottom-zone"
+                    data-resize="right"
+                    class="retro-resize-edge-right"
                 ></div>
 
+            `;
 
-                <div
-                    data-resize="corner"
-                    class="retro-resize-corner"
-                ></div>
-
-            </div>
+        }
 
 
-            <!-- Right resize edge -->
 
-            <div
-                data-resize="right"
-                class="retro-resize-edge-right"
-            ></div>
-
-        `;
-
+        /*
+         * =========================
+         * ADD TO DESKTOP
+         * =========================
+         */
 
         this.container.appendChild(
             element
         );
 
 
+
         this.windows.set(
-            id,
+            windowId,
             {
+
                 app,
+
                 element,
+
 
                 minimized:
                     false,
 
+
                 maximized:
                     false,
+
 
                 previousRect:
                     null,
 
+
                 angle:
                     0,
+
 
                 angularVelocity:
                     0,
 
+
                 targetAngle:
                     0,
 
+
                 physicsFrame:
                     null
+
             }
         );
 
 
-        this.taskbar.addApp(
-            app
-        );
+
+        /*
+         * Special windows like Welcome
+         * don't need a taskbar entry.
+         */
+
+        if (
+            app.showInTaskbar !==
+            false
+        ) {
+
+            this.taskbar.addApp(
+                app,
+                windowId
+            );
+        }
+
 
 
         this.bindWindow(
-            id
+            windowId
         );
+
 
 
         const content =
@@ -345,14 +537,19 @@ export class WindowManager {
             );
 
 
+
         /*
-         * Apps like terminal can run
-         * setup code after mounting.
+         * Terminal/etc. can initialize
+         * after their DOM exists.
          */
 
-        if (app.mount) {
-            app.mount(
+        if (
+            app.mount
+        ) {
+
+            const cleanup = app.mount(
                 content,
+
                 {
                     openApp:
                         appId =>
@@ -361,7 +558,13 @@ export class WindowManager {
                             )
                 }
             );
+
+            if (typeof cleanup === "function") {
+                this.windows.get(windowId).cleanup = cleanup;
+            }
+
         }
+
 
 
         osSound(
@@ -369,17 +572,16 @@ export class WindowManager {
         );
 
 
+
         this.focus(
-            id
+            windowId
         );
+
+        return windowId;
     }
 
 
-    /*
-     * =========================
-     * CONTENT
-     * =========================
-     */
+
 
     getContent(app) {
 
@@ -387,15 +589,23 @@ export class WindowManager {
             app.type ===
             "project"
         ) {
+
             return renderProject(
                 app
             );
+
         }
 
 
-        if (app.render) {
+
+        if (
+            app.render
+        ) {
+
             return app.render();
+
         }
+
 
 
         return `
@@ -404,6 +614,7 @@ export class WindowManager {
             </div>
         `;
     }
+
 
 
     /*
@@ -417,93 +628,134 @@ export class WindowManager {
         const windowData =
             this.windows.get(id);
 
+
         const element =
             windowData.element;
 
 
+        const app =
+            windowData.app;
+
+
+
         /*
-         * Any click focuses window.
+         * Focus when clicked.
          */
 
         element.addEventListener(
             "pointerdown",
+
             () => {
+
                 this.focus(
                     id
                 );
+
             }
         );
 
 
+
         /*
-         * CLOSE
+         * =========================
+         * NORMAL WINDOW BUTTONS
+         * =========================
          */
 
-        element
-            .querySelector(
-                "[data-close]"
-            )
-            .addEventListener(
+        if (
+            !app.frameless
+        ) {
+
+            const closeButton =
+                element.querySelector(
+                    "[data-close]"
+                );
+
+
+            const minimizeButton =
+                element.querySelector(
+                    "[data-minimize]"
+                );
+
+
+            const maximizeButton =
+                element.querySelector(
+                    "[data-maximize]"
+                );
+
+
+
+            closeButton?.addEventListener(
                 "click",
+
                 event => {
 
                     event.stopPropagation();
+
 
                     this.close(
                         id
                     );
+
                 }
             );
 
 
-        /*
-         * MINIMIZE
-         */
 
-        element
-            .querySelector(
-                "[data-minimize]"
-            )
-            .addEventListener(
+            minimizeButton?.addEventListener(
                 "click",
+
                 event => {
 
                     event.stopPropagation();
+
 
                     this.minimize(
                         id
                     );
+
                 }
             );
 
 
-        /*
-         * MAXIMIZE
-         */
 
-        element
-            .querySelector(
-                "[data-maximize]"
-            )
-            .addEventListener(
+            maximizeButton?.addEventListener(
                 "click",
+
                 event => {
 
                     event.stopPropagation();
 
+
                     this.toggleMaximize(
                         id
                     );
+
                 }
             );
 
+        }
+
+
 
         /*
-         * Internal files / folders.
+         * =========================
+         * INTERNAL FILES
+         * =========================
          */
+
+        if (app.openFilesOnClick) {
+            element.addEventListener("click", event => {
+                const target = event.target.closest("[data-open-app]");
+                if (target && event.detail < 2) {
+                    this.open(target.dataset.openApp);
+                }
+            });
+        }
 
         element.addEventListener(
             "dblclick",
+
             event => {
 
                 const target =
@@ -512,27 +764,73 @@ export class WindowManager {
                     );
 
 
-                if (!target) {
+                if (
+                    !target || app.openFilesOnClick
+                ) {
+
                     return;
+
                 }
 
 
                 this.open(
                     target.dataset.openApp
                 );
+
             }
         );
 
+        element.addEventListener("keydown", event => {
+            const target = event.target.closest("[data-open-app]");
+            if (event.key !== "Enter" || event.repeat || !target) {
+                return;
+            }
 
-        this.makeDraggable(
-            id
-        );
+            event.preventDefault();
+            event.stopPropagation();
+            this.open(target.dataset.openApp);
+        });
 
 
-        this.makeResizable(
-            id
-        );
+
+        /*
+         * =========================
+         * DRAGGING
+         * =========================
+         */
+
+        if (
+            app.draggable !== false &&
+            !app.frameless
+        ) {
+
+            this.makeDraggable(
+                id
+            );
+
+        }
+
+
+
+        /*
+         * =========================
+         * RESIZING
+         * =========================
+         */
+
+        if (
+            app.resizable !== false &&
+            !app.frameless
+        ) {
+
+            this.makeResizable(
+                id
+            );
+
+        }
+
     }
+
 
 
     /*
@@ -557,12 +855,24 @@ export class WindowManager {
             );
 
 
+
+        if (
+            !titlebar
+        ) {
+
+            return;
+
+        }
+
+
+
         let dragging =
             false;
 
 
         let offsetX =
             0;
+
 
         let offsetY =
             0;
@@ -571,11 +881,14 @@ export class WindowManager {
         let lastX =
             0;
 
+
         let lastY =
             0;
 
+
         let lastTime =
             0;
+
 
 
         /*
@@ -587,27 +900,28 @@ export class WindowManager {
         const move =
             event => {
 
-                if (!dragging) {
+                if (
+                    !dragging
+                ) {
+
                     return;
+
                 }
 
 
-                /*
-                 * Translate viewport
-                 * coordinates into our
-                 * #windows container.
-                 */
 
                 const containerRect =
                     this.container
                         .getBoundingClientRect();
 
 
+
                 /*
                  * NO CLAMPING.
                  *
-                 * Windows are intentionally
-                 * allowed to move off-screen.
+                 * Windows can freely move
+                 * partially or completely
+                 * off-screen.
                  */
 
                 const x =
@@ -616,27 +930,32 @@ export class WindowManager {
                     offsetX;
 
 
+
                 const y =
                     event.clientY -
                     containerRect.top -
                     offsetY;
 
 
+
                 element.style.left =
                     `${x}px`;
+
 
                 element.style.top =
                     `${y}px`;
 
 
+
                 /*
                  * =========================
-                 * MOMENTUM
+                 * SWING MOMENTUM
                  * =========================
                  */
 
                 const now =
                     performance.now();
+
 
 
                 const dt =
@@ -648,11 +967,13 @@ export class WindowManager {
                     );
 
 
+
                 const velocityX =
                     (
                         event.clientX -
                         lastX
                     ) / dt;
+
 
 
                 const velocityY =
@@ -662,14 +983,16 @@ export class WindowManager {
                     ) / dt;
 
 
+
                 /*
-                 * Horizontal movement creates
-                 * most of the rotation.
+                 * Horizontal motion
+                 * contributes most.
                  */
 
                 let target =
                     velocityX *
                     7;
+
 
 
                 /*
@@ -681,8 +1004,9 @@ export class WindowManager {
                     1.2;
 
 
+
                 /*
-                 * Limit ridiculous angles.
+                 * Limit max tilt.
                  */
 
                 target =
@@ -696,13 +1020,11 @@ export class WindowManager {
                     );
 
 
+
                 windowData.targetAngle =
                     target;
 
 
-                /*
-                 * Momentum toward new target.
-                 */
 
                 windowData.angularVelocity +=
                     (
@@ -711,20 +1033,26 @@ export class WindowManager {
                     ) * 0.16;
 
 
+
                 lastX =
                     event.clientX;
 
+
                 lastY =
                     event.clientY;
+
 
                 lastTime =
                     now;
 
 
+
                 this.startWindowPhysics(
                     windowData
                 );
+
             };
+
 
 
         /*
@@ -736,13 +1064,19 @@ export class WindowManager {
         const up =
             () => {
 
-                if (!dragging) {
+                if (
+                    !dragging
+                ) {
+
                     return;
+
                 }
+
 
 
                 dragging =
                     false;
+
 
 
                 osSound(
@@ -750,30 +1084,27 @@ export class WindowManager {
                 );
 
 
+
                 /*
-                 * Keep the physics you liked,
-                 * but kill most momentum
-                 * when mouse is released.
-                 *
-                 * Smaller number =
-                 * less post-release swing.
+                 * Keep a tiny swing,
+                 * but don't let it fly
+                 * around after release.
                  */
 
                 windowData.angularVelocity *=
                     0.35;
 
 
-                /*
-                 * Return to straight.
-                 */
 
                 windowData.targetAngle =
                     0;
 
 
+
                 this.startWindowPhysics(
                     windowData
                 );
+
 
 
                 window.removeEventListener(
@@ -792,7 +1123,9 @@ export class WindowManager {
                     "pointercancel",
                     up
                 );
+
             };
+
 
 
         /*
@@ -803,18 +1136,21 @@ export class WindowManager {
 
         titlebar.addEventListener(
             "pointerdown",
+
             event => {
 
                 if (
                     event.button !== 0
                 ) {
+
                     return;
+
                 }
 
 
+
                 /*
-                 * Window buttons shouldn't
-                 * move the window.
+                 * Buttons shouldn't drag.
                  */
 
                 if (
@@ -822,11 +1158,15 @@ export class WindowManager {
                         "button"
                     )
                 ) {
+
                     return;
+
                 }
 
 
+
                 event.preventDefault();
+
 
 
                 this.focus(
@@ -834,9 +1174,11 @@ export class WindowManager {
                 );
 
 
+
                 osSound(
                     "drag-start"
                 );
+
 
 
                 /*
@@ -854,16 +1196,12 @@ export class WindowManager {
                             .getBoundingClientRect();
 
 
+
                     const pointerX =
                         event.clientX -
                         containerRect.left;
 
 
-                    /*
-                     * Preserve where cursor was
-                     * horizontally on fullscreen
-                     * window.
-                     */
 
                     const percentageX =
                         pointerX /
@@ -871,9 +1209,10 @@ export class WindowManager {
                             .clientWidth;
 
 
+
                     const old =
-                        windowData
-                            .previousRect;
+                        windowData.previousRect;
+
 
 
                     let restoredWidth =
@@ -882,10 +1221,12 @@ export class WindowManager {
                         ) || 600;
 
 
+
                     let restoredHeight =
                         parseFloat(
                             old?.height
                         ) || 400;
+
 
 
                     restoredWidth =
@@ -897,6 +1238,7 @@ export class WindowManager {
                         );
 
 
+
                     restoredHeight =
                         Math.min(
                             restoredHeight,
@@ -906,15 +1248,19 @@ export class WindowManager {
                         );
 
 
+
                     element.style.width =
                         `${restoredWidth}px`;
+
 
                     element.style.height =
                         `${restoredHeight}px`;
 
 
+
                     /*
-                     * Restore beneath cursor.
+                     * Restore underneath
+                     * cursor position.
                      */
 
                     let newLeft =
@@ -923,14 +1269,6 @@ export class WindowManager {
                         percentageX;
 
 
-                    /*
-                     * Initial restore remains
-                     * visible.
-                     *
-                     * Once dragging starts,
-                     * window can freely leave
-                     * the screen.
-                     */
 
                     newLeft =
                         Math.max(
@@ -946,16 +1284,20 @@ export class WindowManager {
                         );
 
 
+
                     element.style.left =
                         `${newLeft}px`;
+
 
 
                     element.style.top =
                         "0px";
 
 
+
                     windowData.maximized =
                         false;
+
 
 
                     const restoredRect =
@@ -963,14 +1305,17 @@ export class WindowManager {
                             .getBoundingClientRect();
 
 
+
                     offsetX =
                         event.clientX -
                         restoredRect.left;
 
 
+
                     offsetY =
                         event.clientY -
                         restoredRect.top;
+
                 }
 
                 else {
@@ -980,29 +1325,37 @@ export class WindowManager {
                             .getBoundingClientRect();
 
 
+
                     offsetX =
                         event.clientX -
                         rect.left;
 
 
+
                     offsetY =
                         event.clientY -
                         rect.top;
+
                 }
+
 
 
                 dragging =
                     true;
 
 
+
                 lastX =
                     event.clientX;
+
 
                 lastY =
                     event.clientY;
 
+
                 lastTime =
                     performance.now();
+
 
 
                 window.addEventListener(
@@ -1021,9 +1374,11 @@ export class WindowManager {
                     "pointercancel",
                     up
                 );
+
             }
         );
     }
+
 
 
     /*
@@ -1037,33 +1392,34 @@ export class WindowManager {
     ) {
 
         /*
-         * Already running.
+         * Physics loop already active.
          */
 
         if (
             windowData.physicsFrame
         ) {
+
             return;
+
         }
+
 
 
         const step =
             () => {
 
                 /*
-                 * Spring toward target.
+                 * Original spring feel.
                  */
 
                 const spring =
                     0.11;
 
 
-                /*
-                 * Your original damping.
-                 */
 
                 const damping =
                     0.82;
+
 
 
                 const difference =
@@ -1071,17 +1427,21 @@ export class WindowManager {
                     windowData.angle;
 
 
+
                 windowData.angularVelocity +=
                     difference *
                     spring;
+
 
 
                 windowData.angularVelocity *=
                     damping;
 
 
+
                 windowData.angle +=
                     windowData.angularVelocity;
+
 
 
                 windowData.angle =
@@ -1095,20 +1455,24 @@ export class WindowManager {
                     );
 
 
+
                 windowData.element
                     .style
                     .transform =
                     `rotate(${windowData.angle}deg)`;
 
 
+
                 /*
-                 * Swing from near title bar.
+                 * Swing around top area
+                 * like it's hanging.
                  */
 
                 windowData.element
                     .style
                     .transformOrigin =
                     "50% 10px";
+
 
 
                 const settled =
@@ -1118,47 +1482,61 @@ export class WindowManager {
                     ) < 0.02 &&
 
                     Math.abs(
-                        windowData
-                            .angularVelocity
+                        windowData.angularVelocity
                     ) < 0.02;
 
 
-                if (settled) {
+
+                if (
+                    settled
+                ) {
 
                     windowData.angle =
                         windowData.targetAngle;
 
 
+
                     if (
-                        windowData.angle === 0
+                        windowData.angle ===
+                        0
                     ) {
+
                         windowData.element
                             .style
                             .transform =
                             "";
+
                     }
 
                     else {
+
                         windowData.element
                             .style
                             .transform =
                             `rotate(${windowData.angle}deg)`;
+
                     }
+
 
 
                     windowData.physicsFrame =
                         null;
 
 
+
                     return;
+
                 }
+
 
 
                 windowData.physicsFrame =
                     requestAnimationFrame(
                         step
                     );
+
             };
+
 
 
         windowData.physicsFrame =
@@ -1166,6 +1544,7 @@ export class WindowManager {
                 step
             );
     }
+
 
 
     /*
@@ -1184,6 +1563,7 @@ export class WindowManager {
             windowData.element;
 
 
+
         const right =
             element.querySelector(
                 '[data-resize="right"]'
@@ -1200,6 +1580,7 @@ export class WindowManager {
             element.querySelector(
                 '[data-resize="corner"]'
             );
+
 
 
         this.bindResizeHandle(
@@ -1227,6 +1608,13 @@ export class WindowManager {
     }
 
 
+
+    /*
+     * =========================
+     * RESIZE HANDLE
+     * =========================
+     */
+
     bindResizeHandle(
         id,
         handle,
@@ -1234,63 +1622,78 @@ export class WindowManager {
         cursorMode
     ) {
 
-        if (!handle) {
+        if (
+            !handle
+        ) {
+
             return;
+
         }
 
 
-        /*
-         * Custom resize cursor.
-         */
 
         handle.addEventListener(
             "pointerenter",
+
             () => {
 
                 window.dispatchEvent(
                     new CustomEvent(
                         "retro-cursor",
+
                         {
                             detail:
                                 cursorMode
                         }
                     )
                 );
+
             }
         );
 
 
+
         handle.addEventListener(
             "pointerleave",
+
             () => {
 
                 window.dispatchEvent(
                     new CustomEvent(
                         "retro-cursor",
+
                         {
                             detail:
                                 "default"
                         }
                     )
                 );
+
             }
         );
 
 
+
         handle.addEventListener(
             "pointerdown",
+
             event => {
 
                 if (
                     event.button !== 0
                 ) {
+
                     return;
+
                 }
+
 
 
                 event.stopPropagation();
 
+
                 event.preventDefault();
+
 
 
                 this.beginResize(
@@ -1298,10 +1701,18 @@ export class WindowManager {
                     mode,
                     event
                 );
+
             }
         );
     }
 
+
+
+    /*
+     * =========================
+     * RESIZE
+     * =========================
+     */
 
     beginResize(
         id,
@@ -1313,12 +1724,16 @@ export class WindowManager {
             this.windows.get(id);
 
 
+
         if (
             !windowData ||
             windowData.maximized
         ) {
+
             return;
+
         }
+
 
 
         this.focus(
@@ -1326,31 +1741,38 @@ export class WindowManager {
         );
 
 
+
         const element =
             windowData.element;
 
 
+
         /*
-         * Resize shouldn't try to
-         * keep swinging.
+         * Bring any existing swing
+         * back toward neutral.
          */
 
         windowData.targetAngle =
             0;
 
 
+
         const startX =
             event.clientX;
+
 
         const startY =
             event.clientY;
 
 
+
         const startWidth =
             element.offsetWidth;
 
+
         const startHeight =
             element.offsetHeight;
+
 
 
         const startLeft =
@@ -1359,66 +1781,81 @@ export class WindowManager {
             ) || 0;
 
 
+
         const startTop =
             parseFloat(
                 element.style.top
             ) || 0;
 
 
+
         const minWidth =
             300;
+
 
         const minHeight =
             160;
 
 
+
         /*
-         * Resizing is still constrained
-         * to sane desktop dimensions.
+         * Keep resizing sane even though
+         * dragging can leave the screen.
          */
 
         const maxWidth =
             Math.max(
                 minWidth,
 
-                this.container.clientWidth -
+                this.container
+                    .clientWidth -
                 startLeft
             );
+
 
 
         const maxHeight =
             Math.max(
                 minHeight,
 
-                this.container.clientHeight -
+                this.container
+                    .clientHeight -
                 startTop
             );
+
 
 
         let previewWidth =
             startWidth;
 
+
         let previewHeight =
             startHeight;
 
 
+
         /*
-         * Scratch tracking.
+         * =========================
+         * SCRATCH SOUND TRACKING
+         * =========================
          */
 
         let lastMouseX =
             event.clientX;
 
+
         let lastMouseY =
             event.clientY;
+
 
         let lastScratchTime =
             0;
 
 
+
         /*
          * =========================
-         * RESIZE PREVIEW
+         * PREVIEW FRAME
          * =========================
          */
 
@@ -1428,21 +1865,27 @@ export class WindowManager {
             );
 
 
+
         frame.className =
             "retro-resize-frame";
+
 
 
         frame.style.left =
             `${startLeft}px`;
 
+
         frame.style.top =
             `${startTop}px`;
+
 
         frame.style.width =
             `${startWidth}px`;
 
+
         frame.style.height =
             `${startHeight}px`;
+
 
 
         this.container.appendChild(
@@ -1450,13 +1893,18 @@ export class WindowManager {
         );
 
 
+
+        /*
+         * =========================
+         * RESIZE MOVE
+         * =========================
+         */
+
         const move =
             moveEvent => {
 
                 /*
-                 * =========================
-                 * PAPER SCRATCH SOUND
-                 * =========================
+                 * PAPER SCRATCH
                  */
 
                 const dx =
@@ -1464,9 +1912,11 @@ export class WindowManager {
                     lastMouseX;
 
 
+
                 const dy =
                     moveEvent.clientY -
                     lastMouseY;
+
 
 
                 const distance =
@@ -1476,14 +1926,11 @@ export class WindowManager {
                     );
 
 
+
                 const now =
                     performance.now();
 
 
-                /*
-                 * Only play when mouse
-                 * actually moves.
-                 */
 
                 if (
                     distance > 1 &&
@@ -1500,27 +1947,31 @@ export class WindowManager {
                         );
 
 
+
                     resizeScratch(
                         speed
                     );
 
 
+
                     lastScratchTime =
                         now;
+
                 }
+
 
 
                 lastMouseX =
                     moveEvent.clientX;
 
+
                 lastMouseY =
                     moveEvent.clientY;
 
 
+
                 /*
-                 * =========================
-                 * PREVIEW SIZE
-                 * =========================
+                 * Calculate size.
                  */
 
                 const deltaX =
@@ -1528,9 +1979,11 @@ export class WindowManager {
                     startX;
 
 
+
                 const deltaY =
                     moveEvent.clientY -
                     startY;
+
 
 
                 if (
@@ -1549,7 +2002,9 @@ export class WindowManager {
                                 deltaX
                             )
                         );
+
                 }
+
 
 
                 if (
@@ -1568,33 +2023,42 @@ export class WindowManager {
                                 deltaY
                             )
                         );
+
                 }
+
 
 
                 frame.style.width =
                     `${previewWidth}px`;
 
+
                 frame.style.height =
                     `${previewHeight}px`;
+
             };
 
+
+
+        /*
+         * =========================
+         * FINISH RESIZE
+         * =========================
+         */
 
         const finishResize =
             () => {
 
-                /*
-                 * Real window updates after
-                 * releasing the mouse.
-                 */
-
                 element.style.width =
                     `${previewWidth}px`;
+
 
                 element.style.height =
                     `${previewHeight}px`;
 
 
+
                 frame.remove();
+
 
 
                 window.removeEventListener(
@@ -1615,16 +2079,20 @@ export class WindowManager {
                 );
 
 
+
                 window.dispatchEvent(
                     new CustomEvent(
                         "retro-cursor",
+
                         {
                             detail:
                                 "default"
                         }
                     )
                 );
+
             };
+
 
 
         window.addEventListener(
@@ -1646,6 +2114,7 @@ export class WindowManager {
     }
 
 
+
     /*
      * =========================
      * FOCUS
@@ -1658,17 +2127,24 @@ export class WindowManager {
             this.windows.get(id);
 
 
-        if (!windowData) {
+
+        if (
+            !windowData
+        ) {
+
             return;
+
         }
+
 
 
         this.zIndex++;
 
 
+
         /*
-         * Only active window receives
-         * striped title bar.
+         * Only regular windows get
+         * active striped styling.
          */
 
         for (
@@ -1682,24 +2158,51 @@ export class WindowManager {
                 .classList
                 .toggle(
                     "active",
-                    windowId === id
+
+                    windowId ===
+                    id
                 );
+
         }
 
 
-        windowData.element.style.zIndex =
+
+        windowData.element
+            .style
+            .zIndex =
             this.zIndex;
 
 
-        this.taskbar.setActive(
-            id
-        );
+
+        /*
+         * Don't try to activate a
+         * taskbar entry that doesn't exist.
+         */
+
+        if (
+            windowData.app
+                .showInTaskbar !==
+            false
+        ) {
+
+            this.taskbar.setActive(
+                id
+            );
+
+        }
+
+        else {
+
+            this.taskbar.clearActive?.();
+
+        }
     }
+
 
 
     /*
      * =========================
-     * CLOSE / DELETE
+     * CLOSE
      * =========================
      */
 
@@ -1709,9 +2212,15 @@ export class WindowManager {
             this.windows.get(id);
 
 
-        if (!windowData) {
+
+        if (
+            !windowData
+        ) {
+
             return;
+
         }
+
 
 
         osSound(
@@ -1719,8 +2228,9 @@ export class WindowManager {
         );
 
 
+
         /*
-         * Stop physics before removing.
+         * Stop physics.
          */
 
         if (
@@ -1732,12 +2242,18 @@ export class WindowManager {
             );
 
 
+
             windowData.physicsFrame =
                 null;
+
         }
 
 
+
+        windowData.cleanup?.();
+
         windowData.element.remove();
+
 
 
         this.windows.delete(
@@ -1745,13 +2261,24 @@ export class WindowManager {
         );
 
 
-        this.taskbar.removeApp(
-            id
-        );
+
+        if (
+            windowData.app
+                .showInTaskbar !==
+            false
+        ) {
+
+            this.taskbar.removeApp(
+                id
+            );
+
+        }
+
 
 
         this.taskbar.clearActive?.();
     }
+
 
 
     /*
@@ -1766,9 +2293,32 @@ export class WindowManager {
             this.windows.get(id);
 
 
-        if (!windowData) {
+
+        if (
+            !windowData
+        ) {
+
             return;
+
         }
+
+
+
+        /*
+         * Special persistent windows
+         * can disable minimizing.
+         */
+
+        if (
+            windowData.app
+                .minimizable ===
+            false
+        ) {
+
+            return;
+
+        }
+
 
 
         osSound(
@@ -1776,16 +2326,22 @@ export class WindowManager {
         );
 
 
+
         windowData.minimized =
             true;
 
 
-        windowData.element.style.display =
+
+        windowData.element
+            .style
+            .display =
             "none";
+
 
 
         this.taskbar.clearActive?.();
     }
+
 
 
     /*
@@ -1800,23 +2356,34 @@ export class WindowManager {
             this.windows.get(id);
 
 
-        if (!windowData) {
+
+        if (
+            !windowData
+        ) {
+
             return;
+
         }
+
 
 
         windowData.minimized =
             false;
 
 
-        windowData.element.style.display =
+
+        windowData.element
+            .style
+            .display =
             "flex";
+
 
 
         this.focus(
             id
         );
     }
+
 
 
     /*
@@ -1831,9 +2398,15 @@ export class WindowManager {
             this.windows.get(id);
 
 
-        if (!windowData) {
+
+        if (
+            !windowData
+        ) {
+
             return;
+
         }
+
 
 
         if (
@@ -1844,8 +2417,11 @@ export class WindowManager {
                 id
             );
 
+
             return;
+
         }
+
 
 
         const z =
@@ -1857,16 +2433,10 @@ export class WindowManager {
             );
 
 
-        /*
-         * Active window:
-         * taskbar click minimizes.
-         *
-         * Background window:
-         * taskbar click focuses.
-         */
 
         if (
-            z === this.zIndex
+            z ===
+            this.zIndex
         ) {
 
             this.minimize(
@@ -1882,7 +2452,9 @@ export class WindowManager {
             );
 
         }
+
     }
+
 
 
     /*
@@ -1897,28 +2469,58 @@ export class WindowManager {
             this.windows.get(id);
 
 
-        if (!windowData) {
+
+        if (
+            !windowData
+        ) {
+
             return;
+
         }
+
+
+
+        /*
+         * Frameless / special windows
+         * don't maximize.
+         */
+
+        if (
+            windowData.app
+                .maximizable ===
+            false ||
+
+            windowData.app
+                .frameless
+        ) {
+
+            return;
+
+        }
+
 
 
         const element =
             windowData.element;
 
 
+
         /*
-         * Remove swing before changing
-         * window geometry.
+         * Kill rotation before geometry
+         * changes.
          */
 
         windowData.targetAngle =
             0;
 
+
         windowData.angle =
             0;
 
+
         windowData.angularVelocity =
             0;
+
 
 
         if (
@@ -1932,11 +2534,14 @@ export class WindowManager {
 
             windowData.physicsFrame =
                 null;
+
         }
+
 
 
         element.style.transform =
             "";
+
 
 
         /*
@@ -1954,42 +2559,50 @@ export class WindowManager {
             );
 
 
+
             windowData.previousRect = {
+
                 left:
                     element.style.left,
+
 
                 top:
                     element.style.top,
 
+
                 width:
                     element.style.width,
 
+
                 height:
                     element.style.height
+
             };
 
 
-            /*
-             * #windows already begins
-             * underneath the menu bar.
-             */
 
             element.style.left =
                 "0px";
 
+
             element.style.top =
                 "0px";
 
+
             element.style.width =
                 "100%";
+
 
             element.style.height =
                 "100%";
 
 
+
             windowData.maximized =
                 true;
+
         }
+
 
 
         /*
@@ -2005,29 +2618,40 @@ export class WindowManager {
             );
 
 
+
             const old =
                 windowData.previousRect;
 
 
-            if (old) {
+
+            if (
+                old
+            ) {
 
                 element.style.left =
                     old.left;
 
+
                 element.style.top =
                     old.top;
+
 
                 element.style.width =
                     old.width;
 
+
                 element.style.height =
                     old.height;
+
             }
+
 
 
             windowData.maximized =
                 false;
+
         }
+
 
 
         this.focus(

@@ -50,17 +50,17 @@ export class ContextMenu {
                         );
 
 
-                    const appId =
+                    const windowId =
                         windowElement?.dataset
-                            .appId;
+                            .windowId;
 
 
-                    if (appId) {
+                    if (windowId) {
 
                         this.showWindowMenu(
                             event.clientX,
                             event.clientY,
-                            appId
+                            windowId
                         );
 
                     }
@@ -203,12 +203,12 @@ export class ContextMenu {
     showWindowMenu(
         x,
         y,
-        appId
+        windowId
     ) {
         const windowData =
             this.windowManager
                 .windows
-                .get(appId);
+                .get(windowId);
 
 
         if (!windowData) {
@@ -226,7 +226,7 @@ export class ContextMenu {
                         () => {
                             this.windowManager
                                 .minimize(
-                                    appId
+                                    windowId
                                 );
                         }
                 },
@@ -242,7 +242,7 @@ export class ContextMenu {
                         () => {
                             this.windowManager
                                 .toggleMaximize(
-                                    appId
+                                    windowId
                                 );
                         }
                 },
@@ -265,7 +265,7 @@ export class ContextMenu {
                         () => {
                             this.windowManager
                                 .close(
-                                    appId
+                                    windowId
                                 );
                         }
                 }

@@ -13,6 +13,7 @@ export class Icon {
 
 
     create() {
+        this.element.type = "button";
         this.element.className = `
             desktop-icon
 
@@ -33,6 +34,9 @@ export class Icon {
             text-black
 
             outline-none
+            focus-visible:outline
+            focus-visible:outline-2
+            focus-visible:outline-black
         `;
 
         this.element.dataset.appId =

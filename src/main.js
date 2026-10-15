@@ -1,13 +1,20 @@
 import "./style.css";
 
+import { mediaApps } from "./apps/media.js";
+
 
 import {
     LoadingScreen
 } from "./desktop/loading.js";
 
 import {
-    WelcomeScreen
-} from "./desktop/welcome.js";
+    readmeApp
+} from "./apps/readme.js";
+
+import {
+    welcomeApp
+} from "./apps/welcome.js";
+
 
 import {
     SoundManager
@@ -58,7 +65,7 @@ import {
 
 /*
  * =========================
- * ELEMENTS
+ * DOM
  * =========================
  */
 
@@ -109,23 +116,22 @@ const contextMenuElement =
         "#context-menu"
     );
 
-const welcomeElement =
-    document.querySelector(
-        "#welcome-screen"
-    );
 
 
 /*
  * =========================
- * APPS
+ * APPLICATIONS
  * =========================
  */
 
 const allApps = [
+    welcomeApp,
     projectsApp,
     aboutApp,
+    readmeApp,
     terminalApp,
-    ...projectApps
+    ...projectApps,
+    ...mediaApps
 ];
 
 
@@ -142,71 +148,40 @@ new SoundManager();
 
 /*
  * =========================
- * CURSOR
- *
- * Start this BEFORE booting
- * so the custom cursor also
- * works inside boot manager.
+ * TASKBAR
  * =========================
  */
 
-const cursor =
-    new Cursor(
-        cursorCanvas
+const taskbar =
+    new Taskbar(
+        taskbarElement,
+        startMenu,
+
+        [
+            projectsApp,
+            aboutApp,
+            terminalApp,
+            ...mediaApps.filter(app => app.desktop)
+        ]
     );
 
 
-function renderCursor() {
-    cursor.render();
-
-    requestAnimationFrame(
-        renderCursor
-    );
-}
-
-
-renderCursor();
-
-const loader =
-    new LoadingScreen(
-        loadingScreen
-    );
-
-
-await loader.start();
 
 /*
  * =========================
- * DESKTOP SYSTEM
+ * WINDOW MANAGER
  * =========================
  */
 
 let windowManager;
 
 
-const taskbar =
-    new Taskbar(
-        taskbarElement,
-        startMenu,
-        [
-            projectsApp,
-            aboutApp,
-            terminalApp
-        ]
-    );
-
-
-const welcome =
-    new WelcomeScreen(
-        welcomeElement
-    );
-
-welcome.show();
-
 function openApp(id) {
+
     windowManager.open(
         id
     );
+
 }
 
 
@@ -218,6 +193,13 @@ windowManager =
     );
 
 
+
+/*
+ * =========================
+ * DESKTOP
+ * =========================
+ */
+
 new Desktop(
     desktopCanvas,
     desktopIcons,
@@ -226,11 +208,26 @@ new Desktop(
 );
 
 
+
+/*
+ * =========================
+ * CONTEXT MENU
+ * =========================
+ */
+
 new ContextMenu(
     contextMenuElement,
     openApp,
     windowManager
 );
+
+
+
+/*
+ * =========================
+ * TASKBAR EVENTS
+ * =========================
+ */
 
 taskbar.onLaunch =
     openApp;
@@ -238,7 +235,362 @@ taskbar.onLaunch =
 
 taskbar.onToggle =
     id => {
+
         windowManager.toggle(
             id
         );
+
     };
+
+
+
+/*
+ * =========================
+ * CURSOR
+ * =========================
+ */
+
+function startCursor() {
+
+    const cursor =
+        new Cursor(
+            cursorCanvas
+        );
+
+
+    function renderCursor() {
+
+        cursor.render();
+
+
+        requestAnimationFrame(
+            renderCursor
+        );
+
+    }
+
+
+    renderCursor();
+
+}
+
+
+
+/*
+ * =========================
+ * DEFAULT OPEN APPS
+ * =========================
+ */
+
+/*
+ * =========================
+ * DEFAULT OPEN APPS
+ * =========================
+ */
+
+function openDefaultApps() {
+
+    const defaultApps = [
+        "terminal",
+        "readme",
+        "projects"
+    ];
+
+
+    /*
+     * Open all three first so
+     * their dimensions exist.
+     */
+
+    for (
+        const appId of defaultApps
+    ) {
+        windowManager.open(
+            appId
+        );
+    }
+
+
+    const screenWidth =
+        windows.clientWidth;
+
+
+    const screenHeight =
+        windows.clientHeight;
+
+
+
+    /*
+     * =========================
+     * TERMINAL
+     * LEFT SIDE
+     * =========================
+     */
+
+    const terminal =
+        windowManager.windows.get(
+            "terminal"
+        );
+
+
+    if (terminal) {
+
+        const element =
+            terminal.element;
+
+
+        const y =
+            screenHeight *
+            0.18;
+
+
+        element.style.left =
+            "30px";
+
+
+        element.style.top =
+            `${Math.round(y)}px`;
+
+    }
+
+
+
+    /*
+     * =========================
+     * README
+     * CENTER
+     * =========================
+     */
+
+    const readme =
+        windowManager.windows.get(
+            "readme"
+        );
+
+
+    if (readme) {
+
+        const element =
+            readme.element;
+
+
+        const width =
+            element.offsetWidth;
+
+
+        const height =
+            element.offsetHeight;
+
+
+        const x =
+            (
+                screenWidth -
+                width
+            ) / 2;
+
+
+        const y =
+            (
+                screenHeight -
+                height
+            ) / 2;
+
+
+        element.style.left =
+            `${Math.round(x)}px`;
+
+
+        element.style.top =
+            `${Math.round(y)}px`;
+
+    }
+
+
+
+    /*
+     * =========================
+     * PROJECTS
+     * BOTTOM AREA
+     * =========================
+     */
+
+    const projects =
+        windowManager.windows.get(
+            "projects"
+        );
+
+
+    if (projects) {
+
+        const element =
+            projects.element;
+
+
+        const width =
+            element.offsetWidth;
+
+
+        const height =
+            element.offsetHeight;
+
+
+        const x =
+            screenWidth -
+            width -
+            40;
+
+
+        const y = 0
+
+
+        element.style.left =
+            `${Math.round(
+                Math.max(
+                    20,
+                    x
+                )
+            )}px`;
+
+
+        element.style.top =
+            `${Math.round(
+                Math.max(
+                    20,
+                    y
+                )
+            )}px`;
+
+    }
+
+
+
+    /*
+     * Keep Welcome on top.
+     */
+
+    if (
+        windowManager.windows.has(
+            "welcome"
+        )
+    ) {
+
+        windowManager.focus(
+            "welcome"
+        );
+
+    }
+}
+/*
+ * =========================
+ * WELCOME
+ * =========================
+ */
+
+/*
+ * =========================
+ * WELCOME
+ * =========================
+ */
+
+function showWelcome() {
+
+    windowManager.open(
+        "welcome"
+    );
+
+
+    const dismissWelcome =
+        () => {
+
+            const welcome =
+                windowManager.windows.get(
+                    "welcome"
+                );
+
+
+            if (!welcome) {
+                return;
+            }
+
+
+            welcome.element.remove();
+
+
+            windowManager.windows.delete(
+                "welcome"
+            );
+
+        };
+
+
+    window.addEventListener(
+        "pointerdown",
+        dismissWelcome,
+        {
+            once: true,
+            capture: true
+        }
+    );
+
+}
+
+
+/*
+ * =========================
+ * START SYSTEM
+ * =========================
+ */
+/*
+ * =========================
+ * START SYSTEM
+ * =========================
+ */
+
+async function startSystem() {
+
+    const loader =
+        new LoadingScreen(
+            loadingScreen
+        );
+
+
+    await loader.start();
+
+
+    /*
+     * Welcome appears first.
+     */
+
+    showWelcome();
+
+
+    /*
+     * Half a second later,
+     * background apps appear.
+     */
+
+    setTimeout(
+        () => {
+
+            openDefaultApps();
+
+        },
+        500
+    );
+
+
+    /*
+     * Cursor starts after boot.
+     */
+
+    startCursor();
+
+}
+
+/*
+ * =========================
+ * BOOT
+ * =========================
+ */
+
+startSystem();

@@ -248,6 +248,31 @@ export class Desktop {
     }
 
     bindSelection() {
+        this.iconContainer.tabIndex = -1;
+
+        this.iconContainer.addEventListener("keydown", event => {
+            if (event.key !== "Enter" || event.repeat) {
+                return;
+            }
+
+            const focusedIcon = this.icons.find(
+                icon => icon.element === event.target.closest(".desktop-icon")
+            );
+            const icons = focusedIcon && !this.selectedIcons.has(focusedIcon)
+                ? [focusedIcon]
+                : [...this.selectedIcons];
+
+            if (icons.length === 0) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            for (const icon of icons) {
+                this.openApp(icon.app.id);
+            }
+        });
+
         this.iconContainer.addEventListener(
             "pointerdown",
             (event) => {
@@ -268,6 +293,8 @@ export class Desktop {
                 }
 
                 event.preventDefault();
+
+                this.iconContainer.focus({ preventScroll: true });
 
                 this.clearSelection();
 

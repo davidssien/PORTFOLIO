@@ -40,13 +40,25 @@ export class Taskbar {
 
             <div class="retro-menubar">
 
-                <button
-                    data-start-button
-                    class="retro-menu-button"
-                    aria-label="Open David OS menu"
-                >
-                    ■
-                </button>
+            <button
+        data-start-button
+        class="retro-menu-button"
+        aria-label="Open David OS menu"
+            >
+                <img
+                    src="/icons/system-logo.svg"
+                    alt=""
+                    draggable="false"
+                    class="
+                        h-4
+                        w-4
+                        object-contain
+
+                        [image-rendering:pixelated]
+
+                    "
+                />
+            </button>
 
 
                 <div
@@ -67,7 +79,7 @@ export class Taskbar {
                         h-full
                         flex-1
                         items-center
-                        overflow-hidden
+                        overflow-x-auto
                     "
                 ></div>
 
@@ -163,15 +175,15 @@ export class Taskbar {
                         font-bold
                     "
                 >
-                    jujuOS
+                    David OS
                 </div>
 
 
                 <div class="py-1">
 
                     ${this.menuApps
-                        .map(
-                            app => `
+                .map(
+                    app => `
                                 <button
                                     data-start-app="${app.id}"
 
@@ -215,8 +227,8 @@ export class Taskbar {
 
                                 </button>
                             `
-                        )
-                        .join("")}
+                )
+                .join("")}
 
                 </div>
 
@@ -264,10 +276,10 @@ export class Taskbar {
     }
 
 
-    addApp(app) {
+    addApp(app, windowId = app.id) {
         if (
             this.runningApps.has(
-                app.id
+                windowId
             )
         ) {
             return;
@@ -287,13 +299,14 @@ export class Taskbar {
 
 
         button.dataset.taskApp =
-            app.id;
+            windowId;
 
 
         button.className = `
             flex
             h-full
             max-w-[150px]
+            shrink-0
             items-center
             gap-1
 
@@ -350,7 +363,7 @@ export class Taskbar {
                 osSound("select");
 
                 this.onToggle?.(
-                    app.id
+                    windowId
                 );
             }
         );
@@ -362,7 +375,7 @@ export class Taskbar {
 
 
         this.runningApps.set(
-            app.id,
+            windowId,
             button
         );
     }
@@ -390,39 +403,37 @@ export class Taskbar {
 
 
     setActive(id) {
-        this.runningApps.forEach(
-            (
-                button,
-                buttonId
-            ) => {
-                const active =
-                    buttonId === id;
 
+        for (
+            const [
+                appId,
+                button
+            ] of this.runningApps
+        ) {
 
-                button.classList.toggle(
-                    "bg-black",
-                    active
-                );
+            button.classList.toggle(
+                "taskbar-app-active",
+                appId === id
+            );
 
+        }
 
-                button.classList.toggle(
-                    "text-white",
-                    active
-                );
-            }
-        );
     }
 
 
     clearActive() {
-        this.runningApps.forEach(
-            button => {
-                button.classList.remove(
-                    "bg-black",
-                    "text-white"
-                );
-            }
-        );
+
+        for (
+            const button of
+            this.runningApps.values()
+        ) {
+
+            button.classList.remove(
+                "taskbar-app-active"
+            );
+
+        }
+
     }
 
 

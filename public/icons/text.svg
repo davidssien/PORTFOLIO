@@ -1,19 +1,60 @@
 <svg
     xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 32 32"
+    viewBox="0 0 128 128"
     shape-rendering="crispEdges"
 >
-    <rect width="32" height="32" fill="none"/>
+    <rect
+        width="128"
+        height="128"
+        fill="none"
+    />
 
-    <rect x="6" y="3" width="20" height="26" fill="#111"/>
-    <rect x="8" y="5" width="16" height="22" fill="#fff"/>
+    <!-- main page outline -->
+    <rect x="34" y="18" width="2" height="84" fill="#1f1b1d"/>
+    <rect x="36" y="16" width="64" height="2" fill="#1f1b1d"/>
+    <rect x="100" y="18" width="2" height="14" fill="#1f1b1d"/>
+    <rect x="102" y="20" width="6" height="2" fill="#1f1b1d"/>
+    <rect x="108" y="22" width="2" height="30" fill="#1f1b1d"/>
+    <rect x="100" y="52" width="8" height="2" fill="#1f1b1d"/>
+    <rect x="94" y="54" width="6" height="2" fill="#1f1b1d"/>
+    <rect x="94" y="56" width="2" height="44" fill="#1f1b1d"/>
+    <rect x="92" y="100" width="2" height="2" fill="#1f1b1d"/>
+    <rect x="36" y="102" width="56" height="2" fill="#1f1b1d"/>
 
-    <rect x="10" y="9" width="12" height="2" fill="#111"/>
-    <rect x="10" y="13" width="10" height="2" fill="#555"/>
-    <rect x="10" y="17" width="12" height="2" fill="#555"/>
-    <rect x="10" y="21" width="8" height="2" fill="#555"/>
+    <!-- page fill -->
+    <rect x="36" y="18" width="58" height="84" fill="#f2f2f2"/>
 
-    <rect x="20" y="3" width="6" height="6" fill="#bbb"/>
-    <rect x="20" y="3" width="2" height="6" fill="#111"/>
-    <rect x="20" y="7" width="6" height="2" fill="#111"/>
+    <!-- folded corner -->
+    <rect x="100" y="22" width="6" height="30" fill="#bdbdbd"/>
+    <rect x="96" y="26" width="4" height="26" fill="#9f9f9f"/>
+    <rect x="102" y="22" width="2" height="30" fill="#d7d7d7"/>
+
+    <!-- center vertical highlight -->
+    <rect x="66" y="20" width="4" height="54" fill="#e3e3e3"/>
+
+    <!-- blue text lines -->
+    <rect x="44" y="42" width="42" height="4" fill="#214a96"/>
+    <rect x="44" y="50" width="16" height="4" fill="#214a96"/>
+    <rect x="44" y="58" width="30" height="4" fill="#214a96"/>
+    <rect x="44" y="66" width="20" height="4" fill="#214a96"/>
+    <rect x="44" y="74" width="38" height="4" fill="#214a96"/>
+
+    <!-- bottom tray / open folder-like lip -->
+    <rect x="24" y="84" width="58" height="2" fill="#5d5d5d"/>
+    <rect x="18" y="86" width="6" height="2" fill="#1f1b1d"/>
+    <rect x="24" y="86" width="54" height="12" fill="#c8c8c8"/>
+    <rect x="78" y="86" width="4" height="12" fill="#8c8c8c"/>
+    <rect x="82" y="88" width="4" height="10" fill="#d6d6d6"/>
+    <rect x="16" y="88" width="2" height="12" fill="#1f1b1d"/>
+    <rect x="18" y="98" width="6" height="2" fill="#1f1b1d"/>
+    <rect x="24" y="98" width="58" height="2" fill="#1f1b1d"/>
+
+    <!-- tray inner shading -->
+    <rect x="30" y="92" width="38" height="4" fill="#b8b8b8"/>
+    <rect x="34" y="96" width="30" height="2" fill="#b8b8b8"/>
+
+    <!-- lower-right page shading -->
+    <rect x="82" y="90" width="4" height="4" fill="#e9e9e9"/>
+    <rect x="86" y="92" width="4" height="4" fill="#f1f1f1"/>
+    <rect x="82" y="96" width="8" height="4" fill="#d0d0d0"/>
 </svg>
